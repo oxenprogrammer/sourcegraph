@@ -8,15 +8,10 @@ First, [deploy executors](https://docs.sourcegraph.com/admin/deploy_executors) t
 }
 ```
 
-<!--
-Olaf:
+Env vars (TODO):
 
-I'm going to focus on https://github.com/sourcegraph/sourcegraph/issues/24743, which is what also needs to be 
-documented here. The UI already works (but the auto-indexer doesn't yet respect the configuration in the database).
-
-The ./configure_data_retention.md doc is basically what we need to document, but instead explain about how we 
-configure indexing rules rather than data retention rules for a branch or tag of a repo.
-
-Please feel free to rework any part of the docs flow around this, including deployment and terraform-*-executors 
-repo documentation, or unrelated codeintel features you want to make changes to in a drive-by fashion.
--->
+- `PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL`, "10m", "The frequency with which to run periodic codeintel auto-indexing tasks.
+- `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_PROCESS_DELAY`, "24h", "The minimum frequency that the same repository can be considered for auto-index scheduling.
+- `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_BATCH_SIZE`, "100", "The number of repositories to consider for auto-indexing scheduling at a time.
+- `PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_POLL_INTERVAL`, "1s", "Interval between queries to the dependency indexing job queue.
+- `PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY`, "1", "The maximum number of dependency graphs that can be processed concurrently.
