@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -46,6 +47,11 @@ func assertEqual(t *testing.T, got, want interface{}) {
 }
 
 func TestSearchResults(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		// #25936: Some unit tests rely on external services that break
+		// in CI but not locally. They should be removed or improved.
+		t.Skip("TestSeachResults only works in local dev and is not reliable in CI")
+	}
 	db := new(dbtesting.MockDB)
 
 	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
@@ -1015,20 +1021,17 @@ func TestIsGlobalSearch(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	versionContext := "versionCtx"
 	tts := []struct {
-		name           string
-		searchQuery    string
-		versionContext *string
-		patternType    query.SearchType
-		mode           search.GlobalSearchMode
+		name        string
+		searchQuery string
+		patternType query.SearchType
+		mode        search.GlobalSearchMode
 	}{
 		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
 		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
-		{name: "version context", searchQuery: "foo", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", mode: search.DefaultMode},
+		{name: "repogroup", searchQuery: "foo repogroup:grp", mode: search.DefaultMode},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", mode: search.DefaultMode},
 		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
 		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
 	}
@@ -1042,10 +1045,9 @@ func TestIsGlobalSearch(t *testing.T) {
 
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
-					Query:          qinfo,
-					UserSettings:   &schema.Settings{},
-					PatternType:    tt.patternType,
-					VersionContext: tt.versionContext,
+					Query:        qinfo,
+					UserSettings: &schema.Settings{},
+					PatternType:  tt.patternType,
 				},
 			}
 

@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -81,18 +81,8 @@ func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParamete
 	return errors.Wrap(err, "repository search failed")
 }
 
-func jobName(job Job) string {
-	switch job.(type) {
-	case *unindexed.StructuralSearch:
-		return "Structural"
-	default:
-		return "Unknown"
-	}
-}
-
 func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSearchMode) (err error) {
-	name := jobName(job)
-	tr, ctx := trace.New(ctx, "DoSearch", name)
+	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
 		a.Error(err)
@@ -101,7 +91,7 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSe
 	}()
 
 	err = job.Run(ctx, a)
-	return errors.Wrap(err, jobName(job)+" search failed")
+	return errors.Wrap(err, job.Name()+" search failed")
 
 }
 
@@ -117,16 +107,15 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 	return errors.Wrap(err, "symbol search failed")
 }
 
-func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
+func (a *Aggregator) DoFilePathSearch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, notSearcherOnly bool, stream streaming.Sender) (err error) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
-	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
 	defer func() {
 		a.Error(err)
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
 
-	return unindexed.SearchFilesInRepos(ctx, args, a)
+	return unindexed.SearchFilesInRepos(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
 }
 
 func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -137,7 +126,7 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		tr.Finish()
 	}()
 
-	if err := checkDiffCommitSearchLimits(ctx, tp, "diff"); err != nil {
+	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "diff"); err != nil {
 		return err
 	}
 
@@ -158,7 +147,7 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		tr.Finish()
 	}()
 
-	if err := checkDiffCommitSearchLimits(ctx, tp, "commit"); err != nil {
+	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "commit"); err != nil {
 		return err
 	}
 
@@ -169,39 +158,4 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 	}
 
 	return commit.SearchCommitLogInRepos(ctx, a.db, args, a)
-}
-
-func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	hasTimeFilter := false
-	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-		hasTimeFilter = true
-	}
-	if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-		hasTimeFilter = true
-	}
-
-	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
-		return &RepoLimitError{ResultType: resultType, Max: max}
-	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
-		return &TimeLimitError{ResultType: resultType, Max: max}
-	}
-	return nil
-}
-
-type DiffCommitError struct {
-	ResultType string
-	Max        int
-}
-
-type RepoLimitError DiffCommitError
-type TimeLimitError DiffCommitError
-
-func (*RepoLimitError) Error() string {
-	return "repo limit error"
-}
-
-func (*TimeLimitError) Error() string {
-	return "time limit error"
 }

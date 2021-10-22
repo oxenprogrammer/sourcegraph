@@ -5,13 +5,13 @@ import { addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
     ChangesetState,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 import { ExternalChangesetNode } from './ExternalChangesetNode'
@@ -23,7 +23,7 @@ const { add } = storiesOf('web/batches/ExternalChangesetNode', module).addDecora
 add('All states', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <>
                     {Object.values(ChangesetState)
@@ -49,6 +49,7 @@ add('All states', () => {
                                         url: 'http://test.test/pr/123',
                                     },
                                     diffStat: {
+                                        __typename: 'DiffStat',
                                         added: 10,
                                         changed: 20,
                                         deleted: 8,
@@ -95,14 +96,14 @@ add('All states', () => {
                         ))}
                 </>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Unpublished', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -121,6 +122,7 @@ add('Unpublished', () => {
                         externalID: null,
                         externalURL: null,
                         diffStat: {
+                            __typename: 'DiffStat',
                             added: 10,
                             changed: 20,
                             deleted: 8,
@@ -159,14 +161,14 @@ add('Unpublished', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Importing', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -213,14 +215,14 @@ add('Importing', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Importing failed', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -257,14 +259,14 @@ add('Importing failed', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
 add('Sync failed', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ExternalChangesetNode
                     {...props}
@@ -301,6 +303,6 @@ add('Sync failed', () => {
                     }
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

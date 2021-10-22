@@ -1115,7 +1115,7 @@ describe('Blob viewer', () => {
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
                     await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
-                    await driver.page.waitForSelector('.hover-overlay', { visible: true })
+                    await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
 
                 await driver.page.click('.test-go-to-code-host', { button: 'middle' })
@@ -1142,7 +1142,7 @@ describe('Blob viewer', () => {
 
                 // Alert should not be visible before the user reaches the hover threshold
                 assert(
-                    !(await driver.page.$('.install-browser-extension-alert')),
+                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user reaches hover threshold'
                 )
 
@@ -1150,12 +1150,12 @@ describe('Blob viewer', () => {
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
                     await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
-                    await driver.page.waitForSelector('.hover-overlay', { visible: true })
+                    await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
                 await driver.page.reload()
 
                 // Alert should be visible now that the user has seen $HOVER_THRESHOLD hovers
-                await driver.page.waitForSelector('.install-browser-extension-alert', { timeout: 5000 })
+                await driver.page.waitForSelector('[data-testid="install-browser-extension-alert"]', { timeout: 5000 })
 
                 // Dismiss alert
                 await driver.page.click('.test-close-alert')

@@ -14,7 +14,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
-import { getReturnTo } from './SignInSignUpCommon'
+import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
@@ -31,6 +31,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     context,
     isLightTheme,
     telemetryService,
+    featureFlags,
 }) => {
     const location = useLocation()
     const query = new URLSearchParams(location.search)
@@ -66,7 +67,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow) {
-                window.location.replace(new URL('/welcome', window.location.href).pathname)
+                window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
             }
@@ -83,6 +84,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 showEmailForm={query.has(ShowEmailFormQueryParameter)}
                 context={context}
                 telemetryService={telemetryService}
+                featureFlags={featureFlags}
             />
         )
     }
@@ -101,7 +103,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 body={
                     <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
-                        <SignUpForm context={context} onSignUp={handleSignUp} />
+                        <SignUpForm featureFlags={featureFlags} context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">
                             Already have an account? <Link to={`/sign-in${location.search}`}>Sign in</Link>
                         </p>

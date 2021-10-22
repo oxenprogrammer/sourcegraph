@@ -3,6 +3,7 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -24,6 +25,9 @@ const isDevelopment = mode === 'development'
 const isProduction = mode === 'production'
 const isCI = process.env.CI === 'true'
 const isCacheEnabled = isDevelopment && !isCI
+
+/** Allow overriding default Webpack naming behavior for debugging */
+const useNamedChunks = process.env.WEBPACK_USE_NAMED_CHUNKS === 'true'
 
 const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
@@ -117,14 +121,14 @@ const config = {
     // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
     // strict superset of the OSS entrypoint.
     app: isEnterpriseBuild ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
-    'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-    'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
   },
   output: {
     path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-    filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
-    chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
+    filename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
+    chunkFilename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
@@ -159,6 +163,31 @@ const config = {
     shouldAnalyze && new BundleAnalyzerPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
+    isProduction &&
+      new CompressionPlugin({
+        filename: '[path][base].gz',
+        algorithm: 'gzip',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Gzip */
+          level: 9,
+        },
+      }),
+    isProduction &&
+      new CompressionPlugin({
+        filename: '[path][base].br',
+        algorithm: 'brotliCompress',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Brotli */
+          level: 11,
+        },
+        /**
+         * We get little/no benefits from compressing files that are already under this size.
+         * We can fall back to dynamic gzip for these.
+         */
+        threshold: 10240,
+      }),
   ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],

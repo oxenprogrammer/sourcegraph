@@ -307,6 +307,32 @@ Flakiness in snapshot tests can be caused by the search response time, order of 
 
 This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` CSS class to the problematic element and it will be hidden from Percy.
 
+### Lighthouse tests
+
+We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
+
+
+#### Running the tests locally
+1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
+2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
+
+#### Running the tests in CI
+The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
+
+
+### Bundlesize
+
+We measure our generated production build through [Bundlesize](https://github.com/siddharthkp/bundlesize2). This is a tool which takes a series of code bundles and measures their size against a specified baseline. It will also compare against the `main` baseline and report the difference.
+
+**The Bundlesize check failed, what should I do?**
+
+If `Bundlesize` fails, it is likely because one of the generated bundles has gone over the maximum size we have set. This can be due to numerous reasons, to fix this you should check:
+
+1. That you are lazy-loading code where possible.
+2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an NPM dependency.
+
+If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
 ## Continuous Integration
 
 The test suite is exercised on every pull request. For the moment CI output
@@ -335,5 +361,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.32.0 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.33.0 ./dev/run-server-image.sh
 ```

@@ -5,6 +5,7 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -12,7 +13,6 @@ import {
     ChangesetState,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -34,6 +34,7 @@ const now = new Date()
 const batchChangeDefaults: BatchChangeFields = {
     __typename: 'BatchChange',
     changesetsStats: {
+        __typename: 'ChangesetsStats',
         closed: 1,
         deleted: 1,
         merged: 2,
@@ -54,7 +55,7 @@ const batchChangeDefaults: BatchChangeFields = {
         namespaceName: 'alice',
         url: '/users/alice',
     },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
+    diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
     viewerCanAdminister: true,
     closedAt: null,
     description: '## What this batch change does\n\nTruly awesome things for example.',
@@ -70,9 +71,11 @@ const batchChangeDefaults: BatchChangeFields = {
         supersedingBatchSpec: null,
     },
     bulkOperations: {
+        __typename: 'BulkOperationConnection',
         totalCount: 0,
     },
     activeBulkOperations: {
+        __typename: 'BulkOperationConnection',
         totalCount: 0,
         nodes: [],
     },
@@ -123,6 +126,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 body: 'body',
                 checkState: ChangesetCheckState.PASSED,
                 diffStat: {
+                    __typename: 'DiffStat',
                     added: 10,
                     changed: 9,
                     deleted: 1,
@@ -160,6 +164,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 body: 'body',
                 checkState: null,
                 diffStat: {
+                    __typename: 'DiffStat',
                     added: 10,
                     changed: 9,
                     deleted: 1,
@@ -219,7 +224,7 @@ add('Overview', () => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -232,7 +237,7 @@ add('Overview', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
@@ -252,7 +257,7 @@ add('No open changesets', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -265,6 +270,6 @@ add('No open changesets', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

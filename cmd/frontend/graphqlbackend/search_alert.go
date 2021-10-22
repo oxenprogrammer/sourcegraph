@@ -20,13 +20,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type searchAlert struct {
@@ -499,8 +500,8 @@ func capFirst(s string) string {
 func alertForError(err error) *searchAlert {
 	var (
 		alert *searchAlert
-		rErr  *run.RepoLimitError
-		tErr  *run.TimeLimitError
+		rErr  *commit.RepoLimitError
+		tErr  *commit.TimeLimitError
 		mErr  *missingRepoRevsError
 	)
 
@@ -559,7 +560,7 @@ func errorToAlert(err error) (*searchAlert, error) {
 	}
 
 	{
-		var e git.BadCommitError
+		var e gitdomain.BadCommitError
 		if errors.As(err, &e) {
 			return alertForInvalidRevision(e.Spec), nil
 		}
@@ -624,6 +625,13 @@ func alertForInvalidRevision(revision string) *searchAlert {
 	}
 }
 
+func alertForRepoGroupsDeprecation() *searchAlert {
+	return &searchAlert{
+		title:       "Repogroups are deprecated",
+		description: "Repogroups are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate repogroups to search contexts in our blog post: https://about.sourcegraph.com/blog/introducing-search-contexts.",
+	}
+}
+
 type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
 	Inputs *run.SearchInputs
@@ -669,6 +677,10 @@ func (o *alertObserver) update(alert *searchAlert) {
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
 func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
+	if repoGroupFilters, _ := o.Inputs.Query.StringValues(query.FieldRepoGroup); len(repoGroupFilters) > 0 {
+		o.update(alertForRepoGroupsDeprecation())
+	}
+
 	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
 		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
 	}
