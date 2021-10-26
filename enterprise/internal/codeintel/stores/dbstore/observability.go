@@ -26,6 +26,7 @@ type operations struct {
 	dirtyRepositories                      *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
+	findRepos                              *observation.Operation
 	getConfigurationPolicies               *observation.Operation
 	getConfigurationPolicyByID             *observation.Operation
 	getDumpsByIDs                          *observation.Operation
@@ -117,6 +118,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
+		findRepos:                              op("FindRepos"),
 		getConfigurationPolicies:               op("GetConfigurationPolicies"),
 		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
