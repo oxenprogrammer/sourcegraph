@@ -253,6 +253,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					JobQuery: *ciLogsJobQuery,
 					State:    *ciLogsJobState,
 				}
+				fmt.Println("show me buildnumber", *build.Number)
 				logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
 				if err != nil {
 					return err
