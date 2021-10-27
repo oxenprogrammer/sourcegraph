@@ -30,5 +30,4 @@ echo "--- :go: Building sg"
 )
 
 echo "--- :arrow_up: Uploading logs (if build failed)"
-sleep 5
-./ci_sg ci logs --out="$LOKI_URL" --state="failed"
+./ci_sg ci logs --out="$LOKI_URL" --state=""
