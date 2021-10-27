@@ -94,14 +94,6 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 		return nil, errors.New("no builds found")
 	}
 
-	for _, b := range builds {
-		if b.CreatedAt != nil {
-			fmt.Printf("-> %s - %s", *b.ID, *b.CreatedAt)
-		} else {
-			fmt.Printf("-> %s - %v", *b.ID, b.CreatedAt)
-		}
-	}
-
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	return &builds[0], nil
 }
