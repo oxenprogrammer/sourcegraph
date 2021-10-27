@@ -56,12 +56,18 @@ func (o *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (o *OrgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+	if Mocks.Orgs.GetByUserID != nil {
+		return Mocks.Orgs.GetByUserID(ctx, userID)
+	}
 	return o.getByUserID(ctx, userID, false)
 }
 
 // GetOrgsWithRepositoriesByUserID returns a list of all organizations for the user that have a repository attached.
 // An empty slice is returned if the user is not authenticated or is not a member of any org.
 func (o *OrgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+	if Mocks.Orgs.GetOrgsWithRepositoriesByUserID != nil {
+		return Mocks.Orgs.GetOrgsWithRepositoriesByUserID(ctx, userID)
+	}
 	return o.getByUserID(ctx, userID, true)
 }
 
@@ -71,9 +77,6 @@ func (o *OrgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID i
 // onlyOrgsWithRepositories parameter determines, if the function returns all organizations
 // or only those with repositories attached
 func (o *OrgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRepositories bool) ([]*types.Org, error) {
-	if Mocks.Orgs.GetByUserID != nil {
-		return Mocks.Orgs.GetByUserID(ctx, userID)
-	}
 	queryString :=
 		`SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at
 		FROM org_members
